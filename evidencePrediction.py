@@ -8,17 +8,99 @@ import matplotlib.animation as animation
 
 ## Generate evidence numbers between 10 and 20
 np.random.seed(42)
-num_evid = np.random.randint(low=10, high=50, size=80)
+sampleSize = 80
+numEvid = np.random.randint(low=10, high=50, size=sampleSize)
 
 # Generate number of convictions from the evidence with a random noise added
-num_convict = num_evid + np.random.randint(low=3, high=10, size=80)
-
-print(num_evid)
-print(num_convict)
+numConvict = numEvid + np.random.randint(low=3, high=10, size=sampleSize)
 
 # Plot the numbers
 plt.title('Number of convictions based on evidence')
-plt.plot(num_evid, num_convict, "bx") # bx = blue x
+plt.plot(numEvid, numConvict, "bx") # bx = blue x
 plt.xlabel("Number of Evidence")
 plt.ylabel("Number of Convictions")
 plt.show()
+
+# normalize values
+def normalize(array):
+  return (array - array.mean()) / array.std()
+
+# use 70% of the data for training (the remaining 30% shall be used for testing)
+numTrain = math.floor(sampleSize * 0.7)
+
+# convert list to an array and normalize arrays
+trainEvid = np.asanyarray(numEvid[:numTrain])
+trainConvict = np.asanyarray(numConvict[:numTrain])
+
+trainEvidNorm = normalize(trainEvid)
+trainConvictdNorm = normalize(trainConvict)
+
+# do the same for the test data
+testEvid = np.asanyarray(numEvid[numTrain:])
+testConvict = np.asanyarray(numConvict[numTrain:])
+
+testEvidNorm = normalize(testEvid)
+testConvictdNorm = normalize(testConvict)
+
+
+# ------- Start of using TensorFlow
+
+# define placeholders which will be updated
+tfEvid = tf.placeholder("float", name="Evid")
+tfConvict = tf.placeholder("float", name="Convict")
+
+# define variables for evidence and conviction during training
+tfEvidFactor = tf.Variable(np.random.randn(), name="EvidFactor")
+tfConvictOffset = tf.Variable(np.random.randn(), name="ConvictOffset")
+
+# define the operation for predicting the conviction based on evidence by adding both values
+tfConvictPredict = tf.add(tfEvidFactor, tfConvictOffset)
+
+# define a loss function (mean squared error)
+tfCost = tf.reduce_sum(tf.pow(tfConvictPredict-tfConvict, 2))/(2*numTrain)
+
+# set a learning rate and a gradient descent optimizer
+learningRate = 0.1
+gradDesc = tf.train.GradientDescentOptimizer(learningRate).minimize(tfCost)
+
+# initialize variables
+init = tf.global_variables_initializer()
+
+with tf.Session() as sess:
+  sess.run(init)
+
+  displayEvery = 2
+  numTrainingSteps = 50
+
+  # iterate through the training data
+  for i in range(numTrainingSteps):
+    # load the training data
+    for (x,y) in zip(trainConvictdNorm, trainEvidNorm):
+      sess.run(gradDesc, feed_dict={tfEvid: x, tfConvict: y})
+
+  print("Optimized!")
+
+  # Plot of the training and test data, and learned regression
+
+  # Get values sued to normalized data so we can denormalize data back to its original scale
+  trainEvidMean = trainEvid.mean()
+  trainEvidStd = trainEvid.std()
+
+  trainConvictMean = trainConvict.mean()
+  trainConvictStd = trainConvict.std()
+
+  # Plot the graph
+  plt.rcParams["figure.figsize"] = (10,8)
+  plt.figure()
+  plt.xlabel("Number of Evidence")
+  plt.ylabel("Number of Convictions")
+  plt.plot(trainEvid, trainConvict, 'go', label='Training data')
+  plt.plot(testEvid, testConvict, 'mo', label='Testing data')
+  plt.plot(trainEvidNorm * trainEvidStd + trainEvidMean,
+          (sess.run(tfEvidFactor) * trainEvidNorm + sess.run(tfConvictOffset)) * trainConvictStd + trainConvictMean,
+          label='Learned Regression')
+
+  plt.legend(loc='upper left')
+  plt.show()
+
+
