@@ -13,15 +13,13 @@ numEvid = np.random.randint(low=10, high=50, size=sampleSize)
 numConvict = numEvid + np.random.randint(low=3, high=10, size=sampleSize)
 
 # Plot the numbers
-plt.title('Number of convictions based on evidence')
+plt.title("Number of convictions based on evidence")
 plt.plot(numEvid, numConvict, "bx")  # bx = blue x
 plt.xlabel("Number of Evidence")
 plt.ylabel("Number of Convictions")
 plt.show()
 
 # normalize values
-
-
 def normalize(array):
     return (array - array.mean()) / array.std()
 
@@ -43,7 +41,6 @@ testConvict = np.asanyarray(numConvict[numTrain:])
 testEvidNorm = normalize(testEvid)
 testConvictdNorm = normalize(testConvict)
 
-
 # ------- Start of using TensorFlow
 
 # define placeholders which will be updated
@@ -58,7 +55,7 @@ tfConvictOffset = tf.Variable(np.random.randn(), name="ConvictOffset")
 tfConvictPredict = tf.add(tfEvidFactor, tfConvictOffset)
 
 # define a loss function (mean squared error)
-tfCost = tf.reduce_sum(tf.pow(tfConvictPredict-tfConvict, 2))/(2*numTrain)
+tfCost = tf.reduce_sum(tf.pow(tfConvictPredict - tfConvict, 2)) / (2 * numTrain)
 
 # set a learning rate and a gradient descent optimizer
 learningRate = 0.1
@@ -81,18 +78,35 @@ with tf.Session() as sess:
 
         # Print status of learning
         if (i + 1) % displayEvery == 0:
-            cost = sess.run(tfCost, feed_dict={
-                tfEvid: trainEvidNorm, tfConvict: trainConvictdNorm})
-            print("iteration #:", '%04d' % (i + 1), "cost=", "{:.9f}".format(cost),
-                  "evidFactor=", sess.run(
-                      tfEvidFactor), "convictOffset=", sess.run(tfConvictOffset),
-                  "prediction: ", sess.run(tfConvictPredict))
+            cost = sess.run(
+                tfCost, feed_dict={tfEvid: trainEvidNorm, tfConvict: trainConvictdNorm}
+            )
+            print(
+                "iteration #:",
+                "%04d" % (i + 1),
+                "cost=",
+                "{:.9f}".format(cost),
+                "evidFactor=",
+                sess.run(tfEvidFactor),
+                "convictOffset=",
+                sess.run(tfConvictOffset),
+                "prediction: ",
+                sess.run(tfConvictPredict),
+            )
 
     print("Optimized!")
     trainingCost = sess.run(
-        tfCost, feed_dict={tfEvid: trainEvidNorm, tfConvict: trainConvictdNorm})
-    print('Trained cost=', trainingCost, 'evidFactor=', sess.run(
-        tfEvidFactor), 'convictOffset=', sess.run(tfConvictOffset), '\n')
+        tfCost, feed_dict={tfEvid: trainEvidNorm, tfConvict: trainConvictdNorm}
+    )
+    print(
+        "Trained cost=",
+        trainingCost,
+        "evidFactor=",
+        sess.run(tfEvidFactor),
+        "convictOffset=",
+        sess.run(tfConvictOffset),
+        "\n",
+    )
 
     # Plot of the training and test data, and learned regression
 
@@ -108,12 +122,15 @@ with tf.Session() as sess:
     plt.figure()
     plt.xlabel("Number of Evidence")
     plt.ylabel("Number of Convictions")
-    plt.plot(trainEvid, trainConvict, 'go', label='Training data')
-    plt.plot(testEvid, testConvict, 'mo', label='Testing data')
-    plt.plot(trainEvidNorm * trainEvidStd + trainEvidMean,
-             (sess.run(tfEvidFactor) * trainEvidNorm +
-              sess.run(tfConvictOffset)) * trainConvictStd + trainConvictMean,
-             label='Learned Regression')
+    plt.plot(trainEvid, trainConvict, "go", label="Training data")
+    plt.plot(testEvid, testConvict, "mo", label="Testing data")
+    plt.plot(
+        trainEvidNorm * trainEvidStd + trainEvidMean,
+        (sess.run(tfEvidFactor) * trainEvidNorm + sess.run(tfConvictOffset))
+        * trainConvictStd
+        + trainConvictMean,
+        label="Learned Regression",
+    )
 
-    plt.legend(loc='upper left')
+    plt.legend(loc="upper left")
     plt.show()
