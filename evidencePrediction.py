@@ -84,9 +84,10 @@ with tf.Session() as sess:
         # Print status of learning
         if (i + 1) % displayEvery == 0:
             cost = sess.run(tfCost, feed_dict={
-                         tfEvid: trainEvidNorm, tfConvict: trainConvictdNorm})
+                tfEvid: trainEvidNorm, tfConvict: trainConvictdNorm})
             print("iteration #:", '%04d' % (i + 1), "cost=", "{:.9f}".format(cost),
-                  "evidFactor=", sess.run(tfEvidFactor), "convictOffset=", sess.run(tfConvictOffset),
+                  "evidFactor=", sess.run(
+                      tfEvidFactor), "convictOffset=", sess.run(tfConvictOffset),
                   "prediction: ", sess.run(tfConvictPredict))
 
     print("Optimized!")
