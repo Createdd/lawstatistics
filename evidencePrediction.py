@@ -1,6 +1,9 @@
 import tensorflow as tf
 import numpy as np
 import math
+import matplotlib
+
+matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
@@ -17,7 +20,7 @@ plt.title("Number of convictions based on evidence")
 plt.plot(numEvid, numConvict, "bx")  # bx = blue x
 plt.xlabel("Number of Evidence")
 plt.ylabel("Number of Convictions")
-plt.show()
+plt.show(block=False)  # Use the keyword 'block' to override the blocking behavior
 
 # normalize values
 def normalize(array):
@@ -124,9 +127,10 @@ with tf.Session() as sess:
     plt.ylabel("Number of Convictions")
     plt.plot(trainEvid, trainConvict, "go", label="Training data")
     plt.plot(testEvid, testConvict, "mo", label="Testing data")
+    plt.plot(numEvid, numConvict, "bx", label="original")
     plt.plot(
         trainEvidNorm * trainEvidStd + trainEvidMean,
-        (sess.run(tfEvidFactor) * trainEvidNorm + sess.run(tfConvictOffset))
+        (sess.run(tfEvidFactor) * trainEvidNorm + sess.run(tfConvictOffset)) # TODO: error here!!! 
         * trainConvictStd
         + trainConvictMean,
         label="Learned Regression",
