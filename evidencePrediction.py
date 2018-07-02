@@ -1,14 +1,14 @@
 import tensorflow as tf
 import numpy as np
 import math
-import matplotlib  
-matplotlib.use('TkAgg')   
-import matplotlib.pyplot as plt  
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-## Generate evidence numbers between 10 and 20
+# Generate evidence numbers between 10 and 20
 np.random.seed(42)
-sampleSize = 80
+sampleSize = 200
 numEvid = np.random.randint(low=10, high=50, size=sampleSize)
 
 # Generate number of convictions from the evidence with a random noise added
@@ -16,14 +16,17 @@ numConvict = numEvid + np.random.randint(low=3, high=10, size=sampleSize)
 
 # Plot the numbers
 plt.title('Number of convictions based on evidence')
-plt.plot(numEvid, numConvict, "bx") # bx = blue x
+plt.plot(numEvid, numConvict, "bx")  # bx = blue x
 plt.xlabel("Number of Evidence")
 plt.ylabel("Number of Convictions")
 plt.show()
 
 # normalize values
+
+
 def normalize(array):
-  return (array - array.mean()) / array.std()
+    return (array - array.mean()) / array.std()
+
 
 # use 70% of the data for training (the remaining 30% shall be used for testing)
 numTrain = math.floor(sampleSize * 0.7)
@@ -67,40 +70,51 @@ gradDesc = tf.train.GradientDescentOptimizer(learningRate).minimize(tfCost)
 init = tf.global_variables_initializer()
 
 with tf.Session() as sess:
-  sess.run(init)
+    sess.run(init)
 
-  displayEvery = 2
-  numTrainingSteps = 50
+    displayEvery = 2
+    numTrainingSteps = 50
 
-  # iterate through the training data
-  for i in range(numTrainingSteps):
-    # load the training data
-    for (x,y) in zip(trainConvictdNorm, trainEvidNorm):
-      sess.run(gradDesc, feed_dict={tfEvid: x, tfConvict: y})
+    # iterate through the training data
+    for i in range(numTrainingSteps):
+        # load the training data
+        for (x, y) in zip(trainEvidNorm, trainConvictdNorm):
+            sess.run(gradDesc, feed_dict={tfEvid: x, tfConvict: y})
 
-  print("Optimized!")
+        # Print status of learning
+        if (i + 1) % displayEvery == 0:
+            cost = sess.run(tfCost, feed_dict={
+                         tfEvid: trainEvidNorm, tfConvict: trainConvictdNorm})
+            print("iteration #:", '%04d' % (i + 1), "cost=", "{:.9f}".format(cost),
+                  "evidFactor=", sess.run(tfEvidFactor), "convictOffset=", sess.run(tfConvictOffset),
+                  "prediction: ", sess.run(tfConvictPredict))
 
-  # Plot of the training and test data, and learned regression
+    print("Optimized!")
+    trainingCost = sess.run(
+        tfCost, feed_dict={tfEvid: trainEvidNorm, tfConvict: trainConvictdNorm})
+    print('Trained cost=', trainingCost, 'evidFactor=', sess.run(
+        tfEvidFactor), 'convictOffset=', sess.run(tfConvictOffset), '\n')
 
-  # Get values sued to normalized data so we can denormalize data back to its original scale
-  trainEvidMean = trainEvid.mean()
-  trainEvidStd = trainEvid.std()
+    # Plot of the training and test data, and learned regression
 
-  trainConvictMean = trainConvict.mean()
-  trainConvictStd = trainConvict.std()
+    # Get values sued to normalized data so we can denormalize data back to its original scale
+    trainEvidMean = trainEvid.mean()
+    trainEvidStd = trainEvid.std()
 
-  # Plot the graph
-  plt.rcParams["figure.figsize"] = (10,8)
-  plt.figure()
-  plt.xlabel("Number of Evidence")
-  plt.ylabel("Number of Convictions")
-  plt.plot(trainEvid, trainConvict, 'go', label='Training data')
-  plt.plot(testEvid, testConvict, 'mo', label='Testing data')
-  plt.plot(trainEvidNorm * trainEvidStd + trainEvidMean,
-          (sess.run(tfEvidFactor) * trainEvidNorm + sess.run(tfConvictOffset)) * trainConvictStd + trainConvictMean,
-          label='Learned Regression')
+    trainConvictMean = trainConvict.mean()
+    trainConvictStd = trainConvict.std()
 
-  plt.legend(loc='upper left')
-  plt.show()
+    # Plot the graph
+    plt.rcParams["figure.figsize"] = (10, 8)
+    plt.figure()
+    plt.xlabel("Number of Evidence")
+    plt.ylabel("Number of Convictions")
+    plt.plot(trainEvid, trainConvict, 'go', label='Training data')
+    plt.plot(testEvid, testConvict, 'mo', label='Testing data')
+    plt.plot(trainEvidNorm * trainEvidStd + trainEvidMean,
+             (sess.run(tfEvidFactor) * trainEvidNorm +
+              sess.run(tfConvictOffset)) * trainConvictStd + trainConvictMean,
+             label='Learned Regression')
 
-
+    plt.legend(loc='upper left')
+    plt.show()
