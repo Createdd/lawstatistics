@@ -13,7 +13,7 @@ sampleSize = 200
 numEvid = np.random.randint(low=10, high=50, size=sampleSize)
 
 # Generate number of convictions from the evidence with a random noise added
-numConvict = numEvid + np.random.randint(low=3, high=10, size=sampleSize)
+numConvict = numEvid * 10 + np.random.randint(low=200, high=400, size=sampleSize)
 
 # Plot the numbers
 plt.title("Number of convictions based on evidence")
@@ -47,15 +47,15 @@ testConvictdNorm = normalize(testConvict)
 # ------- Start of using TensorFlow
 
 # define placeholders which will be updated
-tfEvid = tf.placeholder("float", name="Evid")
-tfConvict = tf.placeholder("float", name="Convict")
+tfEvid = tf.placeholder(tf.float32, name="Evid")
+tfConvict = tf.placeholder(tf.float32, name="Convict")
 
 # define variables for evidence and conviction during training
 tfEvidFactor = tf.Variable(np.random.randn(), name="EvidFactor")
 tfConvictOffset = tf.Variable(np.random.randn(), name="ConvictOffset")
 
 # define the operation for predicting the conviction based on evidence by adding both values
-tfConvictPredict = tf.add(tfEvidFactor, tfConvictOffset)
+tfConvictPredict = tf.add(tf.multiply(tfEvidFactor, tfEvid), tfConvictOffset)
 
 # define a loss function (mean squared error)
 tfCost = tf.reduce_sum(tf.pow(tfConvictPredict - tfConvict, 2)) / (2 * numTrain)
@@ -72,6 +72,13 @@ with tf.Session() as sess:
 
     displayEvery = 2
     numTrainingSteps = 50
+
+    # Calculate the number of lines to animation
+    numPlotsAnim = math.floor(numTrainingSteps / displayEvery)
+    # Add storage of factor and offset values from each epoch
+    evidFactorAnim = np.zeros(numPlotsAnim)
+    convictOffsetAnim = np.zeros(numPlotsAnim)
+    plotIndex = 0
 
     # iterate through the training data
     for i in range(numTrainingSteps):
@@ -93,8 +100,6 @@ with tf.Session() as sess:
                 sess.run(tfEvidFactor),
                 "convictOffset=",
                 sess.run(tfConvictOffset),
-                "prediction: ",
-                sess.run(tfConvictPredict),
             )
 
     print("Optimized!")
@@ -120,6 +125,23 @@ with tf.Session() as sess:
     trainConvictMean = trainConvict.mean()
     trainConvictStd = trainConvict.std()
 
+    print(
+        sess.run(tfEvidFactor) * trainEvidNorm
+        + sess.run(tfConvictOffset) * trainConvictStd
+        + trainConvictMean
+    )
+
+    test1 = trainEvidNorm * trainEvidStd + trainEvidMean
+    test2 = (
+        (sess.run(tfEvidFactor) * trainEvidNorm
+        + sess.run(tfConvictOffset)) * trainConvictStd
+        + trainConvictMean
+    )
+
+    # print(test1)
+    # print(test2)
+    # print(trainConvictMean, trainEvidMean)
+
     # Plot the graph
     plt.rcParams["figure.figsize"] = (10, 8)
     plt.figure()
@@ -128,13 +150,43 @@ with tf.Session() as sess:
     plt.plot(trainEvid, trainConvict, "go", label="Training data")
     plt.plot(testEvid, testConvict, "mo", label="Testing data")
     plt.plot(numEvid, numConvict, "bx", label="original")
-    plt.plot(
-        trainEvidNorm * trainEvidStd + trainEvidMean,
-        (sess.run(tfEvidFactor) * trainEvidNorm + sess.run(tfConvictOffset)) # TODO: error here!!! 
-        * trainConvictStd
-        + trainConvictMean,
-        label="Learned Regression",
-    )
+    plt.plot(test1, test2, label="Learned Regression")
 
     plt.legend(loc="upper left")
     plt.show()
+
+    # # Plot another graph that animation of how Gradient Descent sequentially adjusted size_factor and price_offset to
+    # # find the values that returned the "best" fit line
+    # fig, ax = plt.subplots()
+    # line, = ax.plot(numEvid, numConvict)
+
+    # plt.rcParams["figure.figsize"] = (10, 8)
+    # plt.title("Gradient Descent Fitting Regression Line")
+    # plt.xlabel("Number of Evidence")
+    # plt.ylabel("Number of Convictions")
+    # plt.plot(trainEvid, trainConvict, "go", label="Training data")
+    # plt.plot(testEvid, testConvict, "mo", label="Testing data")
+
+    # def animate(i):
+    #     line.set_xdata(trainEvidNorm * trainEvidStd + trainEvidMean)
+    #     line.set_ydata(
+    #         (evidFactorAnim[i] * trainEvidNorm + convictOffsetAnim[i]) * trainConvictStd
+    #         + trainConvictMean
+    #     )
+    #     return (line,)
+
+    # # Init only required for blitting to give a clean slate
+    # def initAnim():
+    #     line.set_ydata(np.zeros(shape=numConvict.shape[0]))  # set y's to 0
+    #     return (line,)
+
+    # ani = animation.FuncAnimation(
+    #     fig,
+    #     animate,
+    #     frames=np.arange(0, plotIndex),
+    #     init_func=initAnim,
+    #     interval=1000,
+    #     blit=True,
+    # )
+
+    # plt.show()
