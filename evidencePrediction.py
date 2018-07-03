@@ -102,6 +102,11 @@ with tf.Session() as sess:
                 sess.run(tfConvictOffset),
             )
 
+            # Save the fit size_factor and price_offfset to allow animation of learning process
+            evidFactorAnim[plotIndex] = sess.run(tfEvidFactor)
+            convictOffsetAnim[plotIndex] = sess.run(tfConvictOffset)
+            plotIndex += 1
+
     print("Optimized!")
     trainingCost = sess.run(
         tfCost, feed_dict={tfEvid: trainEvidNorm, tfConvict: trainConvictdNorm}
@@ -125,22 +130,12 @@ with tf.Session() as sess:
     trainConvictMean = trainConvict.mean()
     trainConvictStd = trainConvict.std()
 
-    print(
-        sess.run(tfEvidFactor) * trainEvidNorm
-        + sess.run(tfConvictOffset) * trainConvictStd
-        + trainConvictMean
-    )
-
-    test1 = trainEvidNorm * trainEvidStd + trainEvidMean
-    test2 = (
+    xNorm = trainEvidNorm * trainEvidStd + trainEvidMean
+    yNorm = (
         (sess.run(tfEvidFactor) * trainEvidNorm
         + sess.run(tfConvictOffset)) * trainConvictStd
         + trainConvictMean
     )
-
-    # print(test1)
-    # print(test2)
-    # print(trainConvictMean, trainEvidMean)
 
     # Plot the graph
     plt.rcParams["figure.figsize"] = (10, 8)
@@ -150,43 +145,45 @@ with tf.Session() as sess:
     plt.plot(trainEvid, trainConvict, "go", label="Training data")
     plt.plot(testEvid, testConvict, "mo", label="Testing data")
     plt.plot(numEvid, numConvict, "bx", label="original")
-    plt.plot(test1, test2, label="Learned Regression")
+    plt.plot(xNorm, yNorm, label="Learned Regression")
 
     plt.legend(loc="upper left")
     plt.show()
 
-    # # Plot another graph that animation of how Gradient Descent sequentially adjusted size_factor and price_offset to
-    # # find the values that returned the "best" fit line
-    # fig, ax = plt.subplots()
-    # line, = ax.plot(numEvid, numConvict)
+    # Plot another graph that animation of how Gradient Descent sequentially adjusted size_factor and price_offset to
+    # find the values that returned the "best" fit line
+    fig, ax = plt.subplots()
+    line, = ax.plot(numEvid, numConvict)
 
-    # plt.rcParams["figure.figsize"] = (10, 8)
-    # plt.title("Gradient Descent Fitting Regression Line")
-    # plt.xlabel("Number of Evidence")
-    # plt.ylabel("Number of Convictions")
-    # plt.plot(trainEvid, trainConvict, "go", label="Training data")
-    # plt.plot(testEvid, testConvict, "mo", label="Testing data")
+    plt.rcParams["figure.figsize"] = (10, 8)
+    plt.title("Gradient Descent Fitting Regression Line")
+    plt.xlabel("Number of Evidence")
+    plt.ylabel("Number of Convictions")
+    plt.plot(trainEvid, trainConvict, "go", label="Training data")
+    plt.plot(testEvid, testConvict, "mo", label="Testing data")
 
-    # def animate(i):
-    #     line.set_xdata(trainEvidNorm * trainEvidStd + trainEvidMean)
-    #     line.set_ydata(
-    #         (evidFactorAnim[i] * trainEvidNorm + convictOffsetAnim[i]) * trainConvictStd
-    #         + trainConvictMean
-    #     )
-    #     return (line,)
+    def animate(i):
+        line.set_xdata(xNorm)
+        line.set_ydata(
+            (evidFactorAnim[i] * trainEvidNorm + convictOffsetAnim[i]) * trainConvictStd
+            + trainConvictMean
+        )
+        return (line,)
 
-    # # Init only required for blitting to give a clean slate
-    # def initAnim():
-    #     line.set_ydata(np.zeros(shape=numConvict.shape[0]))  # set y's to 0
-    #     return (line,)
+    # Init only required for blitting to give a clean slate
+    def initAnim():
+        line.set_ydata(np.zeros(shape=numConvict.shape[0]))  # set y's to 0
+        return (line,)
 
-    # ani = animation.FuncAnimation(
-    #     fig,
-    #     animate,
-    #     frames=np.arange(0, plotIndex),
-    #     init_func=initAnim,
-    #     interval=1000,
-    #     blit=True,
-    # )
+    ani = animation.FuncAnimation(
+        fig,
+        animate,
+        frames=np.arange(0, plotIndex),
+        init_func=initAnim,
+        interval=200,
+        blit=True,
+    )
 
-    # plt.show()
+    print('shall animate')
+
+    plt.show()
