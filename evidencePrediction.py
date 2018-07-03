@@ -44,7 +44,6 @@ testConvict = np.asanyarray(numConvict[numTrain:])
 testEvidNorm = normalize(testEvid)
 testConvictdNorm = normalize(testConvict)
 
-# ------- Start of using TensorFlow
 
 # define placeholders which will be updated
 tfEvid = tf.placeholder(tf.float32, name="Evid")
@@ -55,10 +54,10 @@ tfEvidFactor = tf.Variable(np.random.randn(), name="EvidFactor")
 tfConvictOffset = tf.Variable(np.random.randn(), name="ConvictOffset")
 
 # define the operation for predicting the conviction based on evidence by adding both values
-tfConvictPredict = tf.add(tf.multiply(tfEvidFactor, tfEvid), tfConvictOffset)
+tfPredict = tf.add(tf.multiply(tfEvidFactor, tfEvid), tfConvictOffset)
 
 # define a loss function (mean squared error)
-tfCost = tf.reduce_sum(tf.pow(tfConvictPredict - tfConvict, 2)) / (2 * numTrain)
+tfCost = tf.reduce_sum(tf.pow(tfPredict - tfConvict, 2)) / (2 * numTrain)
 
 # set a learning rate and a gradient descent optimizer
 learningRate = 0.1
@@ -132,10 +131,8 @@ with tf.Session() as sess:
 
     xNorm = trainEvidNorm * trainEvidStd + trainEvidMean
     yNorm = (
-        (sess.run(tfEvidFactor) * trainEvidNorm
-        + sess.run(tfConvictOffset)) * trainConvictStd
-        + trainConvictMean
-    )
+        sess.run(tfEvidFactor) * trainEvidNorm + sess.run(tfConvictOffset)
+    ) * trainConvictStd + trainConvictMean
 
     # Plot the graph
     plt.rcParams["figure.figsize"] = (10, 8)
@@ -183,7 +180,5 @@ with tf.Session() as sess:
         interval=200,
         blit=True,
     )
-
-    print('shall animate')
 
     plt.show()
