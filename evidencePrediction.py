@@ -18,7 +18,7 @@ numConvict = numEvid * 10 + np.random.randint(low=200, high=400, size=sampleSize
 
 # Plot the data to get a feeling
 plt.title("Number of convictions based on evidence")
-plt.plot(numEvid, numConvict, "bx")  # bx = blue x
+plt.plot(numEvid, numConvict, "bx")
 plt.xlabel("Number of Evidence")
 plt.ylabel("Number of Convictions")
 plt.show(block=False)  # Use the keyword 'block' to override the blocking behavior
@@ -152,7 +152,10 @@ with tf.Session() as sess:
     fig, ax = plt.subplots()
     line, = ax.plot(numEvid, numConvict)
 
-    plt.rcParams["figure.figsize"] = (10, 8) # adding fixed size parameters to keep animation in scale
+    plt.rcParams["figure.figsize"] = (
+        10,
+        8,
+    )  # adding fixed size parameters to keep animation in scale
     plt.title("Gradient Descent Fitting Regression Line")
     plt.xlabel("Number of Evidence")
     plt.ylabel("Number of Convictions")
