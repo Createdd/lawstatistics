@@ -136,29 +136,30 @@ with tf.Session() as sess:
     ) * trainConvictStd + trainConvictMean
 
     # Plot the result graph
-    plt.rcParams["figure.figsize"] = (10, 8)
     plt.figure()
+
     plt.xlabel("Number of Evidence")
     plt.ylabel("Number of Convictions")
+
     plt.plot(trainEvid, trainConvict, "go", label="Training data")
     plt.plot(testEvid, testConvict, "mo", label="Testing data")
-    plt.plot(numEvid, numConvict, "bx", label="original")
     plt.plot(xNorm, yNorm, label="Learned Regression")
-
     plt.legend(loc="upper left")
+
     plt.show()
 
     # Plot an animated graph that shows the process of optimization
     fig, ax = plt.subplots()
     line, = ax.plot(numEvid, numConvict)
 
-    plt.rcParams["figure.figsize"] = (10, 8)
+    plt.rcParams["figure.figsize"] = (10, 8) # adding fixed size parameters to keep animation in scale
     plt.title("Gradient Descent Fitting Regression Line")
     plt.xlabel("Number of Evidence")
     plt.ylabel("Number of Convictions")
     plt.plot(trainEvid, trainConvict, "go", label="Training data")
     plt.plot(testEvid, testConvict, "mo", label="Testing data")
 
+    # define an animation functon that changes the ydata
     def animate(i):
         line.set_xdata(xNorm)
         line.set_ydata(
@@ -167,11 +168,12 @@ with tf.Session() as sess:
         )
         return (line,)
 
-    # Init only required for blitting to give a clean slate
+    # Initialize the animation with zeros for y
     def initAnim():
-        line.set_ydata(np.zeros(shape=numConvict.shape[0]))  # set y's to 0
+        line.set_ydata(np.zeros(shape=numConvict.shape[0]))
         return (line,)
 
+    # call the animation
     ani = animation.FuncAnimation(
         fig,
         animate,
